@@ -1,16 +1,23 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {ProductType} from "../../../types/product.type";
 import {ActivatedRoute, Params} from "@angular/router";
 import {ProductsService} from "../../../services/products.service";
+import {filter, find, map, Subscription, tap} from "rxjs";
+import {HttpParams} from "@angular/common/http";
+import {error} from "@angular/compiler-cli/src/transformers/util";
+import {findUp} from "@angular/cli/src/utilities/find-up";
 
 @Component({
   selector: 'product-component',
   templateUrl: './product.component.html',
   styleUrls: ['./product.component.scss']
 })
-export class ProductComponent implements OnInit {
+export class ProductComponent implements OnInit, OnDestroy {
   private products: ProductType[] = [];
   product: ProductType;
+  subscriptionProducts: Subscription | null = null;
+  subscriptionParams: Subscription | null = null;
+  private id: number = 0;
 
   constructor(private activatedRoute: ActivatedRoute,
               private productsService: ProductsService) {
@@ -24,25 +31,34 @@ export class ProductComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.activatedRoute.queryParams.subscribe((params: Params) => {
-      if (params['id']) {
-        this.productsService.getProducts().subscribe(data => {
-          this.products = data;
-          this.product = this.products.find((item: ProductType) => {
-            item.id = +params['id'];
-           return item;
-          }) as ProductType;
-          console.log(this.product)
-          //
-          // if (productItem) {
-          //   this.product.id = productItem.id;
-          //   this.product.image = productItem.image;
-          //   this.product.title = productItem.title;
-          //   this.product.price = productItem.price;
-          //   this.product.description = productItem.description;
-          // }
-        })
-      }
-    })
+    this.subscriptionProducts = this.productsService.getProducts()
+      .subscribe({
+        next: products => {
+          this.subscriptionParams = this.activatedRoute.params
+            .subscribe({
+              next: (params: Params) => {
+                const prod = products.find(product => {
+                  product.id = params['id'];
+                  return product;
+                })
+                if (prod) {
+                  this.product = prod;
+                }
+              },
+              error: (error) => {
+                console.log(error)
+              }
+            })
+        },
+        error: (error) => {
+          console.log(error);
+        }
+      })
+
+  }
+
+  ngOnDestroy() {
+    this.subscriptionParams?.unsubscribe();
+    this.subscriptionProducts?.unsubscribe();
   }
 }
