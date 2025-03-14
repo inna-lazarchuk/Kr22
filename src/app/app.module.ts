@@ -13,6 +13,7 @@ import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {HttpClientModule} from "@angular/common/http";
 import { LongTextPipe } from './pipes/long-text.pipe';
 import { PricePipe } from './pipes/price.pipe';
+import { ProductCardComponent } from './components/pages/product-card/product-card.component';
 
 @NgModule({
   declarations: [
@@ -24,7 +25,8 @@ import { PricePipe } from './pipes/price.pipe';
     HeaderComponent,
     FooterComponent,
     LongTextPipe,
-    PricePipe
+    PricePipe,
+    ProductCardComponent
   ],
   imports: [
     BrowserModule,

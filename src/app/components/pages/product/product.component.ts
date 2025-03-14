@@ -1,11 +1,9 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 import {ProductType} from "../../../types/product.type";
-import {ActivatedRoute, Params} from "@angular/router";
+import {ActivatedRoute, Params, Router} from "@angular/router";
 import {ProductsService} from "../../../services/products.service";
-import {filter, find, map, Subscription, tap} from "rxjs";
-import {HttpParams} from "@angular/common/http";
-import {error} from "@angular/compiler-cli/src/transformers/util";
-import {findUp} from "@angular/cli/src/utilities/find-up";
+import {Subscription} from "rxjs";
+
 
 @Component({
   selector: 'product-component',
@@ -13,14 +11,16 @@ import {findUp} from "@angular/cli/src/utilities/find-up";
   styleUrls: ['./product.component.scss']
 })
 export class ProductComponent implements OnInit, OnDestroy {
+  @Input() id: number | undefined;
   private products: ProductType[] = [];
   product: ProductType;
   subscriptionProducts: Subscription | null = null;
   subscriptionParams: Subscription | null = null;
-  private id: number = 0;
 
   constructor(private activatedRoute: ActivatedRoute,
-              private productsService: ProductsService) {
+              private productsService: ProductsService,
+              private router: Router) {
+
     this.product = {
       id: 0,
       image: '',
@@ -31,18 +31,21 @@ export class ProductComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.subscriptionProducts = this.productsService.getProducts()
+    this.subscriptionParams = this.activatedRoute.params
       .subscribe({
-        next: products => {
-          this.subscriptionParams = this.activatedRoute.params
+        next: (params: Params) => {
+          let id = +params['id'];
+          this.subscriptionProducts = this.productsService.getProducts()
             .subscribe({
-              next: (params: Params) => {
-                const prod = products.find(product => {
-                  product.id = params['id'];
-                  return product;
+              next: (data) => {
+                let productItem = data.find((product) => {
+                  return product.id === id;
                 })
-                if (prod) {
-                  this.product = prod;
+                if(productItem) {
+                  this.product.image = productItem.image;
+                  this.product.title = productItem.title;
+                  this.product.price = productItem.price
+                  this.product.description = productItem.description
                 }
               },
               error: (error) => {
@@ -54,7 +57,6 @@ export class ProductComponent implements OnInit, OnDestroy {
           console.log(error);
         }
       })
-
   }
 
   ngOnDestroy() {
